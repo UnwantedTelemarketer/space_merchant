@@ -1,0 +1,184 @@
+To use the visual editor, include antibox.h and use the following:
+
+std::vector<App*> CreateGame() {
+	return { new VisualEditor };
+}
+
+Below is documentation for the typed engine
+
+____________________________________SAMPLE PROJ____________________________________
+#include "antibox/core/antibox.h"
+
+using namespace antibox;
+
+//To create a new project, you'll need to create your own class that derives from antibox::App
+class _NAME_ : public App {   
+
+//To edit window properties, use the method GetWindowProperties():
+	WindowProperties GetWindowProperties() {
+		WindowProperties props;
+
+		props.w = 1280; //this is width
+		props.h = 720; //this is height
+		props.title = "Title"; //This is title 
+		props.cc = { 0.45, 0.45, 0.45, 1 }; //This is background color
+		props.framebuffer_display = false; //False if you want to display straight to screen
+
+		return props; //return because its a method that returns a WindowProperties object
+	}
+
+	//A project required four methods:
+
+	void Init() override{} //This will be called before the first frame.
+	void Update() override {} //This is called before each frame is rendered.
+	void Render() override {} //This is the calls to render each frame.
+	void Shutdown() override {} //This is called when the user closes the window.
+
+	//And one optional one:
+
+	void ImguiRender() override {} //This is called to render ImGui.
+
+};
+
+//To run your custom window, you need to create a new method called CreateApp and return a new list of windows
+std::vector<antibox::App*> CreateApp() {
+	return { new _NAME_ };
+}
+
+______________________________________OBJECTS______________________________________
+
+------------SCENE------------
+antibox::Scene(string name) - base class
+
+GetSceneID() - returns the scene id
+GetSceneName() - returns the name of the scene
+
+CreateObject(string name, Vector2 position, Vector2 size, string sprite_path) 
+- Creates a GameObject and adds it to the scene to be managed there
+
+FindObject(string name)
+- Returns a shared pointer to gameobject in the hierarchy with matching name
+
+
+---------GAMEOBJECT---------
+antibox::GameObject(string name, Vector2 position, Vector2 size, string sprite_path)
+- base class
+
+SetPos(Vector2 position) - Sets position
+SetSize(Vector2 size) - Changes sprite size
+SetColor(Vector4 color) - Nothing right now
+Move(Vector2 distance) - Changes position by distance
+
+GetPos() - Returns the position as a vector2
+GetSize() - Returns the size as a vector2
+GetName() - Returns the name of the gameobject
+
+
+____________________________________FUNCTIONS______________________________________
+
+------INPUT------
+Input::KeyDown(int keycode) - Return true on the FIRST frame a key is pressed
+Input::KeyHeldDown(int keycode) - Return true on EACH frame a key is pressed
+-Keycode macros all start with "KEY_"
+
+Input::MouseButtonDown(int keycode) - Return true on FIRST frame a mouse button is pressed
+Input::MouseButtonHeld(int keycode) - Return true on EACH frame a mouse button is pressed
+
+Mouse Button name macros are:
+-MOUSE_LEFT
+-MOUSE_RIGHT
+-MOUSE_MIDDLE
+
+
+-----AUDIO------
+Play(std::string path_to_soundfile) - Plays a sound file
+PlayLoop(std::string path_to_soundfile, std::string id) - Plays a sound file that loops, with specific ID
+
+Stop(std::string path_to_soundfile) - Does nothing for now
+StopLoop(std::string soundID) - Does nothing for now
+
+SetVolume(float newVolume) - Sets the engine's volume
+SetVolumeLoop(float newVolume, std::string ID) - Sets the sound's volume
+GetVolume() - Returns the current volume as a float
+
+
+---UTILITIES----
+getFPS() - Returns the current Frames per Second
+deltaTime() - Returns the time between the last frame and this one
+getFont() - Returns the custom IMGUI font set in WindowProperties
+
+
+-----EDITOR-----
+AddScene(Scene* scene) - Adds a scene to the game loop to have objects updated
+
+
+-----MATH-----
+RandNum(int max) - Returns a random float between 0 and max (inclusive).
+RandInt(int min, int max) - Returns an random integer between the min and max (inclusive).
+RandString(vector<string> list) - Returns a random string from a vector of strings.
+
+PushBackLog(vector<string>* log, string message, int max)
+- Adds message to log, unless it surpasses max, in which it will drop the first element.
+
+All vectors are floats, except for the _i versions.
+Vector2(x,y) - also "vec2"
+Vector2_I(x,y) - also "vec2_i"
+Vector3(x,y,z) - also "vec3" or "Color"
+Vector4(x,y,z,w) - also "vec4"
+Vector4_I(x,y,z,w) - also "vec4_i"
+Vector26()
+
+maybe - returns either true or false, randomly.
+
+-----CONSOLE-----
+
+Console::Log(type, color, lineNumber) - Logs a message to the console
+
+All console logs will require (T message, textColor color, int lineNum).
+Types supported:
+-string
+-const char*
+-uint32_t
+-int
+-double
+-bool
+-void* (for pointer addresses)
+-vector<string>
+-Vector2
+-Vector2_I
+
+If desired type isnt there, you can use:
+GenericConsoleOut<T>(T obj, textColor color) - Will try to log your type
+
+textColor is a const char[8], or an array of console color codes.
+Premade colors (in namespace "text")
+-blue
+-red
+-green
+-yellow
+-white
+-black
+-purple
+-cyan
+
+Alternative name macros:
+ERROR - red
+LOG - white
+SUCCESS - green
+WARNING - yellow
+
+-----HELPERS-----
+All in namespace antibox
+
+limited_array<T> - creates a vector of type T. Has the following:
+
+	- length : determines how many items can be added before removing the first
+	- append(T item) : adds to the end, and if length is surpassed, drops first element
+	- c_arr() : returns a pointer to the start, as like a c style array
+	- byte_size() : returns the size of the array in bytes
+
+
+
+
+
+
