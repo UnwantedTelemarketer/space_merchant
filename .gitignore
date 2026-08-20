@@ -1,0 +1,111 @@
+# =========================
+# Build output
+# =========================
+
+build/
+bin/
+obj/
+out/
+debug/
+release/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+CTestTestfile.cmake
+_install/
+
+
+# =========================
+# IDE / Editor
+# =========================
+
+.vscode/
+.idea/
+*.code-workspace
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.vcxproj.user
+
+
+# =========================
+# Compiled files
+# =========================
+
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.exe
+*.out
+
+# Debugging
+*.dSYM/
+*.pdb
+*.ilk
+
+
+# =========================
+# C / C++
+# =========================
+
+*.gch
+*.pch
+*.d
+
+
+# =========================
+# OS files
+# =========================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# =========================
+# Temporary files
+# =========================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+
+
+# =========================
+# Logs
+# =========================
+
+*.log
+
+
+# =========================
+# Project-specific generated data
+# =========================
+
+/saves/
+/screenshots/
+/logs/
+
+# Generated runtime data
+*.save
+*.sav
+
+
+# =========================
+# Environment / secrets
+# =========================
+
+.env
+.env.*
+!.env.example
