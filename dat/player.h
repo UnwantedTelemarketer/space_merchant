@@ -1,5 +1,8 @@
+#include "antibox/core/antibox.h"
 #include "entities.h"
 #include <vector>
+
+using namespace antibox;
 
 struct PlayerShip {
   float money = 0.f;
@@ -17,6 +20,7 @@ struct PlayerShip {
   int currentDestination = 1;
 
   bool onShip = true;
+  bool mainPower = false;
 
   // cosmetic things - less important
   bool landingGear = false;
@@ -27,6 +31,59 @@ struct PlayerShip {
   std::string shipErrorMessage = "NO FUEL";
 
   std::vector<CargoStack> cargo;
+
+  std::map<std::string, std::string> sound_effects = {
+      {"thrusters_start", "dat/sfxs/engine_startup.wav"},
+      {"thrusters_idle", "dat/sfxs/engines_idle.wav"},
+      {"thrusters_shutdown", "dat/sfxs/engine_shutdown.wav"},
+      {"powered_idle", "dat/sfxs/ambient_on.mp3"},
+      {"power_up", "dat/sfxs/startup_ship.wav"},
+      {"power_down", "dat/sfxs/power_down.wav"}};
+
+  void PowerDown() {
+    landingGear = false;
+    cabinLights = false;
+    wipers = false;
+    if (thrusters)
+      ToggleThrusters();
+  }
+
+  void PowerUp() {
+    if (!mainPower) {
+      Audio::Play(sound_effects["power_up"]);
+      Audio::PlayLoop(sound_effects["powered_idle"], "p_idle");
+    } else {
+      PowerDown();
+      Audio::Play(sound_effects["power_down"]);
+      Audio::StopLoop("p_idle");
+    }
+
+    mainPower = !mainPower;
+  }
+
+  void EnterShip() {
+    if (thrusters) {
+      Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
+    }
+    if (mainPower) {
+      Audio::PlayLoop(sound_effects["powered_idle"], "p_idle");
+    }
+
+    onShip = true;
+  }
+
+  void ToggleThrusters() {
+    // Get them sound effects going BOO YA!
+    if (!thrusters) {
+      Audio::Play(sound_effects["thrusters_start"]);
+      Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
+    } else {
+      Audio::StopLoop("t_idle");
+      Audio::Play(sound_effects["thrusters_shutdown"]);
+    }
+
+    thrusters = !thrusters;
+  }
 
   void ResetValues() {
     money = 2500;
@@ -138,8 +195,18 @@ struct PlayerShip {
   }
 
   bool Launch() {
+    if (!mainPower) {
+      return false;
+    }
+
     if (currentLocation == currentDestination) {
       shipErrorMessage = "ALREADY AT DESTINATION";
+      showShipErrorMessage = true;
+      return false;
+    }
+
+    if (!thrusters) {
+      shipErrorMessage = "ACTIVATE THRUSTERS TO LAUNCH";
       showShipErrorMessage = true;
       return false;
     }

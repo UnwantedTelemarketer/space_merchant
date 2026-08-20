@@ -1,15 +1,10 @@
 ﻿
-#include "antibox/core/antibox.h"
 #include "dat/player.h"
 #include "dat/world.h"
 
 using namespace antibox;
 
-#ifndef __WIN64__
-    #define VGAFONT "dat/fonts/VGA437.ttf"
-#elif __linux__
-    #define VGAFONT "./bin/dat/fonts/VGA437.ttf"
-#endif
+#define VGAFONT "./dat/fonts/VGA437.ttf"
 
 class Merchant : public App {
   WindowProperties GetWindowProperties() {
@@ -32,12 +27,9 @@ class Merchant : public App {
   bool showInventoryLog = false;
 
   std::map<std::string, std::string> sound_effects = {
-    {"thrusters_start", "dat/sfxs/engine_startup.wav"},
-    {"thrusters_idle", "dat/sfxs/engine_idle.wav"},
-    {"thrusters_shutdown", "dat/sfxs/engine_shutdown.wav"}
-  };
+      {"switch", "dat/sfxs/switch.wav"}};
 
-  int playerX = 5;
+  int playerX = 4;
   int playerY = 5;
 
   std::string playerName = "Test Player";
@@ -103,13 +95,14 @@ class Merchant : public App {
     Audio::SetVolume(0.65f);
 
     ConsoleLog(Audio::GetVolume(), text::red);
-
   }
 
   void Update() override {
     if (Input::KeyDown(KEY_GRAVE_ACCENT)) {
       Utilities::ToggleConsoleVisible();
     }
+
+    Audio::SetVolumeLoop(0.65f, "t_idle");
 
     if (!mainShip.onShip) {
       if (Input::KeyDown(KEY_LEFT)) {
@@ -135,7 +128,7 @@ class Merchant : public App {
       playerY = std::clamp(playerY, 0, 14);
 
       if (currentMap[playerY][playerX] == 4) {
-        mainShip.onShip = true;
+        mainShip.EnterShip();
       }
     }
   }
@@ -486,24 +479,11 @@ class Merchant : public App {
                             ImVec4(0.1f, 0.4f, 0.1f, 1.0f));
     }
 
-    const char* thrustText =
+    const char *thrustText =
         mainShip.thrusters ? "THRUSTERS ACTIVE" : "THRUSTERS OFF";
 
-    if (ImGui::Button(thrustText, ImVec2(-1, 35))) {
-
-      //Get them sound effects going BOO YA!
-      if (!mainShip.thrusters){
-        
-        Audio::Play(sound_effects["thrusters_start"]);
-        Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
-        Audio::SetVolumeLoop(0.65f, "t_idle");
-      }
-      else{
-        Audio::StopLoop("t_idle");
-        Audio::Play(sound_effects["thrusters_shutdown"]);
-      }
-
-      mainShip.thrusters = !mainShip.thrusters;
+    if (ImGui::Button(thrustText, ImVec2(-1, 35)) && mainShip.mainPower) {
+      mainShip.ToggleThrusters();
     }
 
     ImGui::PopStyleColor(3);
@@ -538,6 +518,8 @@ class Merchant : public App {
     if (mainShip.currentLocation == 1) {
       if (ImGui::Button("EXIT SHIP")) {
         mainShip.onShip = false;
+        Audio::StopLoop("p_idle");
+        Audio::StopLoop("t_idle");
         playerX = 4;
         playerY = 5;
       }
@@ -556,9 +538,18 @@ class Merchant : public App {
     ImGui::Text("SHIP SYSTEMS");
     ImGui::Separator();
 
-    ImGui::Checkbox("Landing Gear", &mainShip.landingGear);
-    ImGui::Checkbox("Cabin Lights", &mainShip.cabinLights);
-    ImGui::Checkbox("Window Wipers", &mainShip.wipers);
+    if (ImGui::Button("Landing Gear") && mainShip.mainPower) {
+      mainShip.landingGear = !mainShip.landingGear;
+      Audio::Play(sound_effects["switch"]);
+    }
+
+    if (ImGui::Button("Cabin Lights") && mainShip.mainPower) {
+      mainShip.cabinLights = !mainShip.cabinLights;
+      Audio::Play(sound_effects["switch"]);
+    }
+    if (ImGui::Button("Window Wipers") && mainShip.mainPower) {
+      Audio::Play(sound_effects["switch"]);
+    }
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -573,8 +564,8 @@ class Merchant : public App {
       // Scanner
     }
 
-    if (ImGui::Button("CARGO BAY", ImVec2(-1, 30))) {
-      // Cargo bay
+    if (ImGui::Button("MAIN POWER SWITCH", ImVec2(-1, 30))) {
+      mainShip.PowerUp();
     }
 
     ImGui::EndChild();
@@ -668,9 +659,19 @@ class Merchant : public App {
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
-
     ImGui::Begin("TERMINAL");
+
+    if (!mainShip.mainPower) {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
+      ImGui::Text("================================");
+      ImGui::Text("         MAIN POWER OFF         ");
+      ImGui::Text("================================");
+      ImGui::PopStyleColor(3);
+      ImGui::End();
+
+      return; // if theres no power we dont display the terminal
+    }
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
 
     ImGui::Text("================================");
     ImGui::Text("       SHIP SYSTEM TERMINAL     ");
@@ -678,13 +679,22 @@ class Merchant : public App {
 
     ImGui::Spacing();
 
+    std::string lGearText = "> LANDING GEAR .......... ";
+    lGearText += mainShip.landingGear ? "ON" : "OFF";
+
+    std::string cGearText = "> CABIN LIGHTS .......... ";
+    cGearText += mainShip.cabinLights ? "ON" : "OFF";
+
+    std::string wGearText = "> WIPERS ................ ";
+    wGearText += mainShip.wipers ? "ON" : "OFF";
+
     ImGui::Text("> BOOT SEQUENCE COMPLETE");
     ImGui::Text("> SYSTEM CHECK COMPLETE");
-    ImGui::Text("> NAVIGATION ............ OK");
+    ImGui::Text("> NAVIGATIONS ........... OK");
     ImGui::Text("> LIFE SUPPORT .......... OK");
-    ImGui::Text("> PROPULSION ............ OK");
-    ImGui::Text("> FUEL SYSTEM ........... OK");
-    ImGui::Text("> CARGO SYSTEM .......... OK");
+    ImGui::Text(lGearText.c_str());
+    ImGui::Text(cGearText.c_str());
+    ImGui::Text(wGearText.c_str());
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -697,10 +707,8 @@ class Merchant : public App {
     } else {
       ShowDefaultTerminal();
     }
-
-    ImGui::End();
-
     ImGui::PopStyleColor(3);
+    ImGui::End();
   }
 
   void TerminalErrorMessage() {
