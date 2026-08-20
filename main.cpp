@@ -5,7 +5,11 @@
 
 using namespace antibox;
 
-#define VGAFONT "./bin/dat/fonts/VGA437.ttf"
+#ifndef __WIN64__
+    #define VGAFONT "dat/fonts/VGA437.ttf"
+#elif __linux__
+    #define VGAFONT "./bin/dat/fonts/VGA437.ttf"
+#endif
 
 class Merchant : public App {
   WindowProperties GetWindowProperties() {
@@ -20,7 +24,7 @@ class Merchant : public App {
     return props;
   }
 
-  Scene main = {"TEST"};
+  Scene main = {"BEST"};
   int int_value = 0;
   PlayerShip mainShip;
   std::vector<CartItem> shoppingCart;
