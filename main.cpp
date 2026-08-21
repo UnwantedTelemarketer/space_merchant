@@ -29,8 +29,12 @@ class Merchant : public App {
   std::map<std::string, std::string> sound_effects = {
       {"switch", "dat/sfxs/switch.wav"}};
 
+
   int playerX = 4;
   int playerY = 5;
+
+  float sfx_volume = 0.65f;
+  float music_volume = 0.4f;
 
   std::string playerName = "Test Player";
   std::string playerTitle = "'The Traveler'";
@@ -92,9 +96,13 @@ class Merchant : public App {
 
     mainShip.AddCargo(item_water, 15);
 
-    Audio::SetVolume(0.65f);
+    Audio::SetVolume(sfx_volume);
 
     ConsoleLog(Audio::GetVolume(), text::red);
+
+    Audio::PlayLoop("dat/music/ambient_trader.wav", "bg_music");
+
+    Audio::SetVolumeLoop(music_volume, "bg_music");
   }
 
   void Update() override {
