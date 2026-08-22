@@ -435,6 +435,63 @@ class Merchant : public App {
     ImGui::End();
   }
 
+  void DrawHyperspeedWindow(){
+
+  ImVec2 windowPos = ImGui::GetCursorScreenPos();
+  ImVec2 windowSize = ImGui::GetContentRegionAvail();
+
+  ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+  // Background
+  drawList->AddRectFilled(
+      windowPos,
+      ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y),
+      IM_COL32(5, 5, 10, 255));
+
+  // Seed so the stars don't change every frame
+  static bool initialized = false;
+
+  struct Star {
+      ImVec2 position;
+      bool large;
+  };
+
+  static std::vector<Star> stars;
+
+  if (!initialized) {
+      initialized = true;
+
+      std::mt19937 rng(12345);
+
+      std::uniform_real_distribution<float> xDist(0.0f, windowSize.x);
+
+      std::uniform_real_distribution<float> yDist(0.0f, windowSize.y);
+
+      std::uniform_int_distribution<int> sizeDist(0, 4);
+
+      for (int i = 0; i < 150; i++) {
+          stars.push_back({ ImVec2(xDist(rng), yDist(rng)), sizeDist(rng) == 0 });
+      }
+  }
+
+  // Draw stars
+  for (const Star& star : stars) {
+      ImVec2 pos(windowPos.x + star.position.x, windowPos.y + star.position.y);
+
+      if (star.large) {
+          drawList->AddText(pos, IM_COL32(220, 220, 220, 255), "*");
+      }
+      else {
+          drawList->AddText(pos, IM_COL32(130, 130, 130, 255), ".");
+      }
+  }
+
+  // Reserve the space so ImGui doesn't put widgets over it
+  ImGui::Dummy(windowSize);
+
+  ImGui::End();
+  }
+
   void DrawShipControls() {
 
     ImGui::PushFont(Engine::Instance().getFont("ui"));

@@ -87,6 +87,11 @@ struct PlayerShip {
   }
 
   void ToggleThrusters() {
+
+    if (curState == ShipState::In_Transit) {
+        TerminalThrowError("CURRENTLY IN TRANSIT");
+        return;
+    }
     // Get them sound effects going BOO YA!
     if (!thrusters) {
       Audio::Play(sound_effects["thrusters_start"]);
@@ -228,6 +233,11 @@ struct PlayerShip {
   bool Launch() {
     if (!mainPower) {
       return false;
+    }
+
+    if (curState == ShipState::In_Transit) {
+        TerminalThrowError("CURRENTLY IN TRANSIT");
+        return false;
     }
 
     if (!thrusters) {
