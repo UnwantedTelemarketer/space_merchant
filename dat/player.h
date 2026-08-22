@@ -18,6 +18,7 @@ struct PlayerShip {
   float cargoCapacity = 0.f;
   int currentLocation = 0;
   int currentDestination = 1;
+  float errorMessageLength = 0;
 
   bool onShip = true;
   bool mainPower = false;
@@ -38,7 +39,10 @@ struct PlayerShip {
       {"thrusters_shutdown", "dat/sfxs/engine_shutdown.wav"},
       {"powered_idle", "dat/sfxs/ambient_on.mp3"},
       {"power_up", "dat/sfxs/startup_ship.wav"},
-      {"power_down", "dat/sfxs/power_down.wav"}};
+      {"power_down", "dat/sfxs/power_down.wav"},
+      {"terminal_error", "dat/sfxs/error.mp3"},
+      {"terminal_type", "dat/sfxs/terminal_type.mp3"}
+  };
 
   void PowerDown() {
     landingGear = false;
@@ -152,15 +156,13 @@ struct PlayerShip {
 
     // Check money
     if (totalCost > money) {
-      shipErrorMessage = "INSUFFICIENT CREDITS IN ACCOUNT";
-      showShipErrorMessage = true;
+      TerminalThrowError("INSUFFICIENT CREDITS IN ACCOUNT");
       return false;
     }
 
     // Check cargo capacity
     if (GetCargoWeight() + totalWeight > cargoCapacity) {
-      shipErrorMessage = "NOT ENOUGH FREE SPACE ON SHIP";
-      showShipErrorMessage = true;
+      TerminalThrowError("NO SPACE IN THE CARGO HOLD");
       return false;
     }
 
@@ -200,14 +202,12 @@ struct PlayerShip {
     }
 
     if (currentLocation == currentDestination) {
-      shipErrorMessage = "ALREADY AT DESTINATION";
-      showShipErrorMessage = true;
+      TerminalThrowError("ALREADY AT DESTINATION");
       return false;
     }
 
     if (!thrusters) {
-      shipErrorMessage = "ACTIVATE THRUSTERS TO LAUNCH";
-      showShipErrorMessage = true;
+      TerminalThrowError("ACTIVATE THRUSTERS TO LAUNCH");
       return false;
     }
 
@@ -215,8 +215,7 @@ struct PlayerShip {
     const float fuelCost = 10.f;
 
     if (fuel < fuelCost) {
-      shipErrorMessage = "INSUFFICIENT FUEL TO LAUNCH";
-      showShipErrorMessage = true;
+      TerminalThrowError("INSUFFICIENT FUEL TO LAUNCH");
       return false;
     }
 
@@ -226,6 +225,34 @@ struct PlayerShip {
 
     return true;
   }
+
+  void TerminalThrowError(std::string message) {
+      //Set the error message
+      shipErrorMessage = message;
+      showShipErrorMessage = true;
+      errorMessageLength = 0;
+
+      //Lerp the error showing and the letters shown
+      Utilities::SetVarInSeconds("terminal_error", &showShipErrorMessage, 6.f);
+      Utilities::Lerp("terminal_message_length", &errorMessageLength, shipErrorMessage.size() - 1, 1.f);
+
+      //play the audio
+      Audio::Play(sound_effects["terminal_error"]);
+      Audio::PlayLoop(sound_effects["terminal_type"], "terminal_typing");
+
+  }
+
+  std::string GetTerminalError() {
+      int errorMessageEndNum = std::floor(errorMessageLength);
+
+      if (errorMessageLength >= shipErrorMessage.size() - 1) {
+          Audio::StopLoop("terminal_typing");
+          return shipErrorMessage;
+      }
+
+      return shipErrorMessage.substr(0, errorMessageEndNum);
+  }
+
 
   void ArriveAtDestination() { currentLocation = currentDestination; }
 };

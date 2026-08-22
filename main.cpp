@@ -28,6 +28,12 @@ class Merchant : public App {
 
   std::map<std::string, std::string> sound_effects = {
       {"switch", "dat/sfxs/switch.wav"}};
+  std::vector<std::string> kb_sounds = {
+      "dat/sfxs/kb/keyboard_1.wav",
+      "dat/sfxs/kb/keyboard_2.wav",
+      "dat/sfxs/kb/keyboard_3.wav",
+      "dat/sfxs/kb/keyboard_4.wav"
+  };
 
 
   int playerX = 4;
@@ -39,6 +45,9 @@ class Merchant : public App {
   std::string playerName = "Test Player";
   std::string playerTitle = "'The Traveler'";
   SellableItem item_water = {1, "Water", 5.f, 2.f};
+
+  std::string terminalCommand = "";
+  std::vector<std::string> terminalOutputLog;
 
   //----Ship Colors----
   ImVec4 windowBG = ImVec4(0.06f, 0.06f, 0.06f, 1.0f);
@@ -106,6 +115,8 @@ class Merchant : public App {
   }
 
   void Update() override {
+
+    UpdateTerminalInput();
     if (Input::KeyDown(KEY_GRAVE_ACCENT)) {
       Utilities::ToggleConsoleVisible();
     }
@@ -138,6 +149,7 @@ class Merchant : public App {
       if (currentMap[playerY][playerX] == 4) {
         mainShip.EnterShip();
       }
+
     }
   }
 
@@ -518,9 +530,6 @@ class Merchant : public App {
     if (ImGui::Button("LAUNCH", ImVec2(-1, 40))) {
       if (mainShip.Launch()) {
         mainShip.ArriveAtDestination();
-      } else {
-        Utilities::SetVarInSeconds("terminal_error",
-                                   &mainShip.showShipErrorMessage, 3.f);
       }
     }
     if (mainShip.currentLocation == 1) {
@@ -681,40 +690,26 @@ class Merchant : public App {
     }
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
 
-    ImGui::Text("================================");
-    ImGui::Text("       SHIP SYSTEM TERMINAL     ");
-    ImGui::Text("================================");
 
-    ImGui::Spacing();
-
-    std::string lGearText = "> LANDING GEAR .......... ";
-    lGearText += mainShip.landingGear ? "ON" : "OFF";
-
-    std::string cGearText = "> CABIN LIGHTS .......... ";
-    cGearText += mainShip.cabinLights ? "ON" : "OFF";
-
-    std::string wGearText = "> WIPERS ................ ";
-    wGearText += mainShip.wipers ? "ON" : "OFF";
-
-    ImGui::Text("> BOOT SEQUENCE COMPLETE");
-    ImGui::Text("> SYSTEM CHECK COMPLETE");
-    ImGui::Text("> NAVIGATIONS ........... OK");
-    ImGui::Text("> LIFE SUPPORT .......... OK");
-    ImGui::Text(lGearText.c_str());
-    ImGui::Text(cGearText.c_str());
-    ImGui::Text(wGearText.c_str());
-
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
 
     if (mainShip.showShipErrorMessage) {
       TerminalErrorMessage();
     } else if (showInventoryLog) {
       ShowInventoryTerminal();
     } else {
-      ShowDefaultTerminal();
+        ImGui::Text("================================");
+        ImGui::Spacing();
+        ImGui::Text("===                          ===");
+        ImGui::Spacing();
+        ImGui::Text("================================");
     }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    ShowDefaultTerminal();
+
     ImGui::PopStyleColor(3);
     ImGui::End();
   }
@@ -722,33 +717,116 @@ class Merchant : public App {
   void TerminalErrorMessage() {
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
 
-    ImGui::Text("> !!! SYSTEM WARNING !!!");
+    ImGui::Text("==== !!! SYSTEM WARNING !!! ====");
 
     ImGui::Spacing();
 
-    ImGui::Text("> %s", mainShip.shipErrorMessage.c_str());
+    ImGui::Text("> %s", mainShip.GetTerminalError().c_str());
 
     ImGui::Spacing();
 
-    ImGui::Text("> LAUNCH ABORTED");
+    ImGui::Text("======== LAUNCH ABORTED ========");
 
     ImGui::PopStyleColor();
   }
 
+  void TerminalCheckStatus() {
+      ImGui::Text("================================");
+      ImGui::Text("       SHIP SYSTEM TERMINAL     ");
+      ImGui::Text("================================");
+
+      ImGui::Spacing();
+
+      std::string lGearText = "> LANDING GEAR .......... ";
+      lGearText += mainShip.landingGear ? "ON" : "OFF";
+
+      std::string cGearText = "> CABIN LIGHTS .......... ";
+      cGearText += mainShip.cabinLights ? "ON" : "OFF";
+
+      std::string wGearText = "> WIPERS ................ ";
+      wGearText += mainShip.wipers ? "ON" : "OFF";
+
+      ImGui::Text("> BOOT SEQUENCE COMPLETE");
+      ImGui::Text("> SYSTEM CHECK COMPLETE");
+      ImGui::Text("> NAVIGATIONS ........... OK");
+      ImGui::Text("> LIFE SUPPORT .......... OK");
+      ImGui::Text(lGearText.c_str());
+      ImGui::Text(cGearText.c_str());
+      ImGui::Text(wGearText.c_str());
+
+      ImGui::Text("> ALL IS GOOD");
+
+      ImGui::Spacing();
+
+      ImGui::Text("NO ACTIVE WARNINGS");
+      ImGui::Text("NO SYSTEM FAULTS");
+      ImGui::Text("SHIP STATUS: NOMINAL");
+
+      ImGui::Spacing();
+      ImGui::Spacing();
+  }
+
   void ShowDefaultTerminal() {
+      for (const std::string& line : terminalOutputLog) {
+          ImGui::Text("%s", line.c_str());
+      }
 
-    ImGui::Text("> ALL IS GOOD");
+      ImGui::Text("> %s", terminalCommand.c_str());
+  }
 
-    ImGui::Spacing();
+  void UpdateTerminalInput() {
+      if (!mainShip.onShip) return; // only capture when player is at the terminal
 
-    ImGui::Text("NO ACTIVE WARNINGS");
-    ImGui::Text("NO SYSTEM FAULTS");
-    ImGui::Text("SHIP STATUS: NOMINAL");
+      //65-90 is a-z on keys
 
-    ImGui::Spacing();
-    ImGui::Spacing();
+      const int lowercaseOffset = 32;
+      bool clicked = false;
 
-    ImGui::Text("READY.");
+      // Grab any characters typed this frame
+      for (int curKey = KEY_A; curKey < KEY_Z + 1; curKey++) {
+
+          if (Input::KeyDown(curKey)) { // printable ASCII only
+              terminalCommand += static_cast<char>(curKey);
+              clicked = true;
+          }
+          else if (Input::KeyDown(KEY_SPACE)) {
+              terminalCommand += ' ';
+              clicked = true;
+          }
+      }
+
+      if (Input::KeyDown(KEY_BACKSPACE) && !terminalCommand.empty()) {
+          terminalCommand.pop_back();
+          clicked = true;
+      }
+
+      if (Input::KeyDown(KEY_ENTER)) {
+          if (!terminalCommand.empty()) {
+              terminalOutputLog.push_back(terminalCommand);
+              RunTerminalCommand(terminalCommand);
+          }
+          terminalCommand.clear();
+          clicked = true;
+      }
+
+      if (clicked) {
+          Audio::Play(kb_sounds[Math::RandInt(0, 3)]);
+      }
+  }
+
+  void RunTerminalCommand(std::string command) {
+      std::string commandOutput = "";
+      if (command == "HELP") {
+          commandOutput += " - HELP         : THIS\n";
+          commandOutput += " - VALUE <ITEM> : GENERAL VALUE CHECK\n";
+          commandOutput += " - VALUE TOTAL  : GIVES TOTAL CARGO VALUE\n";
+          commandOutput += " - LIST CARGO   : LISTS ALL HELD CARGO\n";
+          commandOutput += " - LIST <PEOPLE/PLACES> : LISTS KNOWN PEOPLE OR PLACES";
+      }
+
+      if (!commandOutput.empty()) {
+          terminalOutputLog.push_back(commandOutput);
+      }
   }
 
   void Shutdown() override {}
