@@ -1,6 +1,4 @@
-﻿
-#include "dat/player.h"
-#include "dat/world.h"
+﻿#include "dat/player.h"
 
 using namespace antibox;
 
@@ -19,23 +17,18 @@ class Merchant : public App {
     return props;
   }
 
+  LevelEditor levelEditor;
+
+  // =========================================================
+  // CORE STATE
+  // =========================================================
+
   Scene main = {"BEST"};
   int int_value = 0;
   PlayerShip mainShip;
   std::vector<CartItem> shoppingCart;
   bool inTerminal = false;
   bool showInventoryLog = false;
-
-  std::map<std::string, std::string> sound_effects = {
-      {"switch", "dat/sfxs/switch.wav"},
-  };
-  std::vector<std::string> kb_sounds = {
-      "dat/sfxs/kb/keyboard_1.wav",
-      "dat/sfxs/kb/keyboard_2.wav",
-      "dat/sfxs/kb/keyboard_3.wav",
-      "dat/sfxs/kb/keyboard_4.wav"
-  };
-
 
   int playerX = 4;
   int playerY = 5;
@@ -48,9 +41,27 @@ class Merchant : public App {
   SellableItem item_water = {1, "Water", 5.f, 2.f};
 
   std::string terminalCommand = "";
-  std::string lastTerminalOutput = "> TERMINAL BOOTED\n> TYPE HELP FOR COMMANDS";
+  std::string lastTerminalOutput =
+      "> TERMINAL BOOTED\n> TYPE HELP FOR COMMANDS";
 
-  //----Ship Colors----
+  // =========================================================
+  // AUDIO
+  // =========================================================
+
+  std::map<std::string, std::string> sound_effects = {
+      {"switch", "dat/sfxs/switch.wav"},
+  };
+  std::vector<std::string> kb_sounds = {
+      "dat/sfxs/kb/keyboard_1.wav",
+      "dat/sfxs/kb/keyboard_2.wav",
+      "dat/sfxs/kb/keyboard_3.wav",
+      "dat/sfxs/kb/keyboard_4.wav",
+  };
+
+  // =========================================================
+  // SHIP CONTROL COLORS
+  // =========================================================
+
   ImVec4 windowBG = ImVec4(0.06f, 0.06f, 0.06f, 1.0f);
   ImVec4 childBG = ImVec4(0.08f, 0.08f, 0.08f, 1.0f);
   ImVec4 frameBG = ImVec4(0.11f, 0.11f, 0.11f, 1.0f);
@@ -58,47 +69,17 @@ class Merchant : public App {
   ImVec4 buttonHoverColor = ImVec4(0.19f, 0.19f, 0.19f, 1.0f);
   ImVec4 buttonActiveColor = ImVec4(0.22f, 0.22f, 0.22f, 1.0f);
 
-  std::vector<std::vector<int>> currentMap = {
-      {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-       3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-      {3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
-      {3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
-      {3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
-      {3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 10, 2, 3},
-      {3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
-      {3, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 3},
-      {3, 4, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2,  2, 2,
-       2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 10, 2, 3},
-      {3, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 3},
-      {3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
-      {3, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2,  2, 2,
-       2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 10, 2, 3},
-      {3, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 3},
-      {3, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 5, 5, 5, 2, 2, 2, 2, 2, 3},
-      {3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
-      {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-       3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}};
+  // =========================================================
+  // ON-FOOT MAP
+  // =========================================================
 
-  std::vector<Location> locations = {
-      {"Deep Space", LocationType::Space, -1.f, {}},
-      {"Gas N Mart Space Stop",
-       LocationType::GasStation,
-       3.5f,
-       {{food, 25.f, 15.f}, {water, 12.f, 7.f}}},
+  // =========================================================
+  // LOCATIONS & MARKETS
+  // =========================================================
 
-      {"Mining Colony", LocationType::Colony, 10.f, {}},
-      {"Bazaar", LocationType::Market, 5.5f, {}}};
+  // =========================================================
+  // LIFECYCLE
+  // =========================================================
 
   void Init() override {
     Engine::Instance().AddScene(&main);
@@ -110,48 +91,64 @@ class Merchant : public App {
 
     ConsoleLog(Audio::GetVolume(), text::red);
 
-    Audio::PlayLoop("dat/music/ambient_trader.wav", "bg_music");
+    Audio::PlayLoop(space_music[Math::RandInt(0, 1)], "bg_music");
 
     Audio::SetVolumeLoop(music_volume, "bg_music");
   }
 
   void Update() override {
 
-      mainShip.CheckState();
+    mainShip.CheckState();
+
     UpdateTerminalInput();
+
     if (Input::KeyDown(KEY_GRAVE_ACCENT)) {
-      Utilities::ToggleConsoleVisible();
+      levelEditor.visible = !levelEditor.visible;
     }
 
-    Audio::SetVolumeLoop(0.65f, "t_idle");
-
     if (!mainShip.onShip) {
+      int newX = playerX;
+      int newY = playerY;
+
       if (Input::KeyDown(KEY_LEFT)) {
-        playerX -= 1;
+        newX -= 1;
       }
       if (Input::KeyDown(KEY_RIGHT)) {
-        playerX += 1;
+        newX += 1;
       }
       if (Input::KeyDown(KEY_UP)) {
-        playerY -= 1;
+        newY -= 1;
       }
       if (Input::KeyDown(KEY_DOWN)) {
-        playerY += 1;
+        newY += 1;
       }
 
-      if (currentMap[playerY][playerX] == 10) {
+      int mapHeight = static_cast<int>(mainShip.currentMap.size());
+      int mapWidth =
+          mapHeight > 0 ? static_cast<int>(mainShip.currentMap[0].size()) : 0;
+
+      newX = std::clamp(newX, 0, mapWidth - 1);
+      newY = std::clamp(newY, 0, mapHeight - 1);
+
+      int destTile = GetMapTile(mainShip.currentMap, newX, newY);
+      bool blocked = (destTile == WALL || destTile == SHELF);
+
+      if (!blocked) {
+        playerX = newX;
+        playerY = newY;
+      }
+
+      int currentTile = GetMapTile(mainShip.currentMap, playerX, playerY);
+
+      if (currentTile == CHECKOUT_TERMINAL || currentTile == TRADER_NPC) {
         inTerminal = true;
       } else {
         inTerminal = false;
       }
 
-      playerX = std::clamp(playerX, 0, 29);
-      playerY = std::clamp(playerY, 0, 14);
-
-      if (currentMap[playerY][playerX] == 4) {
+      if (currentTile == SHIP_STAIRS) {
         mainShip.EnterShip();
       }
-
     }
   }
 
@@ -161,10 +158,25 @@ class Merchant : public App {
     DrawCockpitWindow();
     DrawShipControls();
     DrawTerminal();
+
+    levelEditor.Draw();
+
     if (!mainShip.onShip && inTerminal) {
-      ShowGasNMartMarket();
+      LocationType curType = locations[mainShip.currentLocation].type;
+      if (curType == LocationType::GasStation) {
+        ShowGasNMartMarket();
+      } else if (curType == LocationType::Colony ||
+                 curType == LocationType::Market) {
+        ShowTradingPost(mainShip.currentLocation);
+      }
     }
   }
+
+  void Shutdown() override {}
+
+  // =========================================================
+  // CART HELPERS
+  // =========================================================
 
   void AddToCart(const MarketItem &item, int quantity) {
     for (CartItem &cartItem : shoppingCart) {
@@ -196,6 +208,10 @@ class Merchant : public App {
 
     return total;
   }
+
+  // =========================================================
+  // MARKET WINDOWS
+  // =========================================================
 
   std::string ShowInventoryTerminal() {
     std::string cargoManifest = "";
@@ -356,144 +372,308 @@ class Merchant : public App {
     ImGui::End();
   }
 
-  //---------------------------------------=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  void DrawCockpitWindow() {
-    ImGui::Begin("COCKPIT WINDOW");
+  NPC *GetLocationNPC(int locationIndex) {
+    if (locationIndex < 0 ||
+        locationIndex >= static_cast<int>(locationNPCs.size()))
+      return nullptr;
+    if (locationNPCs[locationIndex].name.empty())
+      return nullptr;
+    return &locationNPCs[locationIndex];
+  }
 
-    if (!mainShip.onShip) {
-      ImGui::PushFont(Engine::Instance().getFont("ui"));
-      for (int y = 0; y < 15; y++) {
-        for (int x = 0; x < 30; x++) {
-          if (y == playerY && x == playerX) {
-            ImGui::TextUnformatted("@");
-          } else {
-            char tileCharacter = GetTileCharacter(currentMap[y][x]);
-            ImGui::Text("%c", tileCharacter);
-          }
-          if (x < 29)
-            ImGui::SameLine();
+  void ShowTradingPost(int locationIndex) {
+    Location &loc = locations[locationIndex];
+    NPC *npc = GetLocationNPC(locationIndex);
+
+    ImGui::Begin(loc.name.c_str());
+
+    // =========================================================
+    // NPC / DIALOGUE
+    // =========================================================
+
+    if (npc) {
+      static std::map<int, int> dialogueIndex;
+      int &lineIdx = dialogueIndex[locationIndex];
+
+      ImGui::BeginChild("NPCPanel", ImVec2(0, 90), true);
+      ImGui::Text("%s", npc->name.c_str());
+      ImGui::SameLine();
+      ImGui::TextDisabled("- %s", npc->title.c_str());
+      ImGui::Separator();
+
+      if (!npc->dialogue.empty()) {
+        ImGui::TextWrapped(
+            "\"%s\"", npc->dialogue[lineIdx % npc->dialogue.size()].c_str());
+      }
+
+      if (ImGui::Button("TALK")) {
+        lineIdx++;
+      }
+      ImGui::EndChild();
+      ImGui::Spacing();
+    }
+
+    // =========================================================
+    // BUY (their goods -> your cargo)
+    // =========================================================
+
+    ImGui::BeginChild("BuyPanel", ImVec2(400, 0), true);
+    ImGui::Text("FOR SALE");
+    ImGui::Separator();
+
+    for (int i = 0; i < static_cast<int>(loc.market.size()); i++) {
+      MarketItem &marketItem = loc.market[i];
+      if (marketItem.buyPrice <= 0.f)
+        continue; // not offered here
+
+      ImGui::Text("%-16s $%.2f", marketItem.item.name.c_str(),
+                  marketItem.buyPrice);
+      ImGui::SameLine();
+
+      std::string buttonName = "BUY##buy" + std::to_string(i);
+      if (ImGui::Button(buttonName.c_str())) {
+        if (marketItem.buyPrice > mainShip.money) {
+          mainShip.TerminalThrowError("INSUFFICIENT CREDITS IN ACCOUNT");
+        } else if (mainShip.GetCargoWeight() + marketItem.item.weight >
+                   mainShip.cargoCapacity) {
+          mainShip.TerminalThrowError("NO SPACE IN THE CARGO HOLD");
+        } else {
+          mainShip.money -= marketItem.buyPrice;
+          mainShip.AddCargo(marketItem.item, 1);
+        }
+      }
+    }
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+
+    // =========================================================
+    // SELL (your cargo -> their credits)
+    // =========================================================
+
+    ImGui::BeginChild("SellPanel", ImVec2(400, 0), true);
+    ImGui::Text("SELL CARGO");
+    ImGui::Separator();
+
+    for (int i = 0; i < static_cast<int>(mainShip.cargo.size()); i++) {
+      CargoStack &stack = mainShip.cargo[i];
+
+      // find matching market entry to see if/what they'll pay
+      float sellPrice = 0.f;
+      for (const MarketItem &m : loc.market) {
+        if (m.item.itemID == stack.item.itemID) {
+          sellPrice = m.sellPrice;
+          break;
         }
       }
 
-      ImGui::PopFont();
-      ImGui::End();
+      ImGui::Text("%-16s x%d", stack.item.name.c_str(), stack.quantity);
+      ImGui::SameLine();
 
-      return;
+      if (sellPrice > 0.f) {
+        ImGui::Text("$%.2f", sellPrice);
+        ImGui::SameLine();
+
+        std::string sellButton = "SELL##sell" + std::to_string(i);
+        if (ImGui::Button(sellButton.c_str())) {
+          mainShip.money += sellPrice;
+          mainShip.RemoveCargo(stack.item.itemID, 1);
+          i--; // list may have shrunk, recheck this index
+        }
+      } else {
+        ImGui::TextDisabled("NOT WANTED HERE");
+      }
     }
+    ImGui::EndChild();
 
-    ImVec2 windowPos = ImGui::GetCursorScreenPos();
-    ImVec2 windowSize = ImGui::GetContentRegionAvail();
+    ImGui::Spacing();
+    ImGui::Text("MONEY: $%.2f", mainShip.money);
 
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    ImGui::End();
+  }
 
-    // Background
-    drawList->AddRectFilled(
-        windowPos,
-        ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y),
-        IM_COL32(5, 5, 10, 255));
+  // =========================================================
+  // COCKPIT WINDOW
+  // =========================================================
 
-    // Seed so the stars don't change every frame
-    static bool initialized = false;
-
+  void DrawStarfield(ImVec2 windowPos, ImVec2 windowSize,
+                     ImDrawList *drawList) {
     struct Star {
       ImVec2 position;
       bool large;
     };
-
+    static bool initialized = false;
     static std::vector<Star> stars;
 
     if (!initialized) {
       initialized = true;
-
       std::mt19937 rng(12345);
-
       std::uniform_real_distribution<float> xDist(0.0f, windowSize.x);
-
       std::uniform_real_distribution<float> yDist(0.0f, windowSize.y);
-
       std::uniform_int_distribution<int> sizeDist(0, 4);
-
       for (int i = 0; i < 150; i++) {
         stars.push_back({ImVec2(xDist(rng), yDist(rng)), sizeDist(rng) == 0});
       }
     }
 
-    // Draw stars
     for (const Star &star : stars) {
       ImVec2 pos(windowPos.x + star.position.x, windowPos.y + star.position.y);
-
       if (star.large) {
         drawList->AddText(pos, IM_COL32(220, 220, 220, 255), "*");
       } else {
         drawList->AddText(pos, IM_COL32(130, 130, 130, 255), ".");
       }
     }
+  }
 
-    // Reserve the space so ImGui doesn't put widgets over it
+  void DrawHyperspeedWindow(ImVec2 windowPos, ImVec2 windowSize,
+                            ImDrawList *drawList) {
+    float cellWidth = ImGui::CalcTextSize("M").x;
+    float cellHeight = ImGui::GetTextLineHeight();
+
+    int cols = (int)(windowSize.x / cellWidth);
+    int rows = (int)(windowSize.y / cellHeight);
+    int centerCol = cols / 2;
+    int centerRow = rows / 2;
+
+    struct Streak {
+      float dirX, dirY; // unit vector, one of 12 fixed angles
+      float distSteps;  // current distance from center, in grid cells
+                        // (float for smooth angles)
+      float speedTier;  // cells advanced per tick
+      bool large;
+    };
+    static bool initialized = false;
+    static std::vector<Streak> streaks;
+    static float tickTimer = 0.0f;
+    const float tickInterval = 0.045f;
+
+    if (!initialized) {
+      initialized = true;
+      std::mt19937 rng(12345);
+      std::uniform_int_distribution<int> angleIdxDist(
+          0, 11); // 12 angles, 30 degrees apart
+      std::uniform_int_distribution<int> startDist(0, 20);
+      std::uniform_real_distribution<float> speedDist(1.0f, 3.0f);
+      std::uniform_int_distribution<int> sizeDist(0, 4);
+
+      int maxRadius = std::max(cols, rows) / 2 + 2;
+      for (int i = 0; i < 120; i++) {
+        int angleIdx = angleIdxDist(rng);
+        float angle = angleIdx * (3.14159f / 6.0f); // 30 degrees per step
+        float dx = std::cos(angle);
+        float dy = std::sin(angle);
+        streaks.push_back({dx, dy, (float)(startDist(rng) % maxRadius),
+                           speedDist(rng), sizeDist(rng) == 0});
+      }
+    }
+
+    tickTimer += ImGui::GetIO().DeltaTime;
+    bool tick = false;
+    if (tickTimer >= tickInterval) {
+      tickTimer -= tickInterval;
+      tick = true;
+    }
+
+    int maxRadius = std::max(cols, rows) / 2 + 2;
+
+    for (Streak &s : streaks) {
+      if (tick) {
+        s.distSteps += s.speedTier;
+        if (s.distSteps > maxRadius) {
+          s.distSteps = 0.0f;
+        }
+      }
+
+      // Snap glyph choice to nearest of the 4 line characters available in
+      // ASCII, based on the actual (finer-grained) direction angle
+      float angle = std::atan2(s.dirY, s.dirX);
+      float normAngle = std::fmod(angle + 2.0f * 3.14159f, 3.14159f); // 0..pi
+      const char *glyph;
+      if (normAngle < 0.3927f || normAngle > 2.7489f)
+        glyph = "-";
+      else if (normAngle < 1.1781f)
+        glyph = "\\";
+      else if (normAngle < 1.9635f)
+        glyph = "|";
+      else
+        glyph = "/";
+
+      int trailCount = s.large ? 4 : 2;
+      for (int t = 0; t < trailCount; t++) {
+        float d = s.distSteps - t;
+        if (d <= 0.0f)
+          continue;
+
+        // Position is computed in float space along the true angle,
+        // then rounded to the nearest grid cell so it still snaps visually.
+        int cellX = centerCol + (int)std::round(s.dirX * d);
+        int cellY = centerRow + (int)std::round(s.dirY * d);
+        if (cellX < 0 || cellX >= cols || cellY < 0 || cellY >= rows)
+          continue;
+
+        ImVec2 pos(windowPos.x + cellX * cellWidth,
+                   windowPos.y + cellY * cellHeight);
+
+        float fade = 1.0f - (float)t / trailCount;
+        int alpha = (int)(255.0f * std::min(1.0f, d / 6.0f) * fade);
+        if (alpha <= 0)
+          continue;
+
+        ImU32 color = s.large ? IM_COL32(255, 255, 255, alpha)
+                              : IM_COL32(160, 160, 200, alpha);
+
+        drawList->AddText(pos, color, glyph);
+      }
+    }
+  }
+
+  void DrawCockpitWindow() {
+    ImGui::Begin("COCKPIT WINDOW");
+
+    if (!mainShip.onShip) {
+      ImGui::PushFont(Engine::Instance().getFont("ui"));
+      for (int y = 0; y < mainShip.currentMap.size(); y++) {
+        for (int x = 0; x < mainShip.currentMap[0].size(); x++) {
+          if (y == playerY && x == playerX) {
+            ImGui::TextUnformatted("@");
+          } else {
+            int tile = GetMapTile(mainShip.currentMap, x, y);
+            char tileCharacter = GetTileCharacter(tile);
+            ImGui::TextColored(GetTileColor(tile), "%c", tileCharacter);
+          }
+          ImGui::SameLine();
+        }
+        ImGui::Spacing();
+      }
+      ImGui::PopFont();
+      ImGui::End();
+      return;
+    }
+    ImVec2 windowPos = ImGui::GetCursorScreenPos();
+    ImVec2 windowSize = ImGui::GetContentRegionAvail();
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+
+    drawList->AddRectFilled(
+        windowPos,
+        ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y),
+        IM_COL32(5, 5, 10, 255));
+
+    if (mainShip.curState == ShipState::In_Transit) {
+      DrawHyperspeedWindow(windowPos, windowSize, drawList);
+    } else {
+      DrawStarfield(windowPos, windowSize, drawList);
+    }
+
     ImGui::Dummy(windowSize);
-
     ImGui::End();
   }
 
-  void DrawHyperspeedWindow(){
-
-  ImVec2 windowPos = ImGui::GetCursorScreenPos();
-  ImVec2 windowSize = ImGui::GetContentRegionAvail();
-
-  ImDrawList* drawList = ImGui::GetWindowDrawList();
-
-  // Background
-  drawList->AddRectFilled(
-      windowPos,
-      ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y),
-      IM_COL32(5, 5, 10, 255));
-
-  // Seed so the stars don't change every frame
-  static bool initialized = false;
-
-  struct Star {
-      ImVec2 position;
-      bool large;
-  };
-
-  static std::vector<Star> stars;
-
-  if (!initialized) {
-      initialized = true;
-
-      std::mt19937 rng(12345);
-
-      std::uniform_real_distribution<float> xDist(0.0f, windowSize.x);
-
-      std::uniform_real_distribution<float> yDist(0.0f, windowSize.y);
-
-      std::uniform_int_distribution<int> sizeDist(0, 4);
-
-      for (int i = 0; i < 150; i++) {
-          stars.push_back({ ImVec2(xDist(rng), yDist(rng)), sizeDist(rng) == 0 });
-      }
-  }
-
-  // Draw stars
-  for (const Star& star : stars) {
-      ImVec2 pos(windowPos.x + star.position.x, windowPos.y + star.position.y);
-
-      if (star.large) {
-          drawList->AddText(pos, IM_COL32(220, 220, 220, 255), "*");
-      }
-      else {
-          drawList->AddText(pos, IM_COL32(130, 130, 130, 255), ".");
-      }
-  }
-
-  // Reserve the space so ImGui doesn't put widgets over it
-  ImGui::Dummy(windowSize);
-
-  ImGui::End();
-  }
+  // =========================================================
+  // SHIP CONTROL WINDOW
+  // =========================================================
 
   void DrawShipControls() {
-
     ImGui::PushFont(Engine::Instance().getFont("ui"));
     static float throttle = 0.0f;
     static float maneuvering = 0.0f;
@@ -534,9 +714,9 @@ class Merchant : public App {
     float availableWidth = ImGui::GetContentRegionAvail().x;
     float panelWidth = (availableWidth - spacing * 2.0f) / 3.0f;
 
-    // =========================================================
+    // ---------------------------------------------------------
     // FLIGHT
-    // =========================================================
+    // ---------------------------------------------------------
 
     ImGui::BeginChild("Flight", ImVec2(panelWidth, 0), true);
 
@@ -581,22 +761,18 @@ class Merchant : public App {
     ImGui::Text(destText.c_str());
 
     if (ImGui::Button("CYCLE DESTINATION", ImVec2(-1, 35))) {
-      mainShip.currentDestination += 1;
-      if (mainShip.currentDestination >= locations.size()) {
-        mainShip.currentDestination = 1;
-      }
+      mainShip.CycleDestination();
     }
 
     ImGui::Spacing();
 
     if (ImGui::Button("LAUNCH", ImVec2(-1, 40))) {
-        mainShip.Launch();
+      mainShip.Launch();
     }
-    if (mainShip.currentLocation == 1) {
+
+    if (mainShip.currentLocation != 0) { // anywhere but Deep Space
       if (ImGui::Button("EXIT SHIP")) {
-        mainShip.onShip = false;
-        Audio::StopLoop("p_idle");
-        Audio::StopLoop("t_idle");
+        mainShip.ExitShip();
         playerX = 4;
         playerY = 5;
       }
@@ -606,9 +782,9 @@ class Merchant : public App {
 
     ImGui::SameLine();
 
-    // =========================================================
+    // ---------------------------------------------------------
     // SHIP SYSTEMS
-    // =========================================================
+    // ---------------------------------------------------------
 
     ImGui::BeginChild("Systems", ImVec2(panelWidth, 0), true);
 
@@ -624,6 +800,7 @@ class Merchant : public App {
       mainShip.cabinLights = !mainShip.cabinLights;
       Audio::Play(sound_effects["switch"]);
     }
+
     if (ImGui::Button("Window Wipers") && mainShip.mainPower) {
       Audio::Play(sound_effects["switch"]);
     }
@@ -642,6 +819,7 @@ class Merchant : public App {
     }
 
     if (ImGui::Button("MAIN POWER SWITCH", ImVec2(-1, 30))) {
+      Audio::Play(sound_effects["switch"]);
       mainShip.PowerUp();
     }
 
@@ -649,71 +827,46 @@ class Merchant : public App {
 
     ImGui::SameLine();
 
-    // =========================================================
+    // ---------------------------------------------------------
     // STATUS
-    // =========================================================
+    // ---------------------------------------------------------
 
     ImGui::BeginChild("Status", ImVec2(panelWidth, 0), true);
 
     ImGui::Text("STATUS");
     ImGui::Separator();
 
-    // -------------------------
-    // Hull
-    // -------------------------
-
     ImGui::Text("HULL");
-
     ImGui::ProgressBar(mainShip.shipHealth / mainShip.shipHealthMax,
                        ImVec2(-1, 20), "");
-
     ImGui::Text("%.0f / %.0f", mainShip.shipHealth, mainShip.shipHealthMax);
 
     ImGui::Spacing();
 
-    // -------------------------
-    // Fuel
-    // -------------------------
-
     ImGui::Text("FUEL");
-
     std::string fuelText = std::to_string(mainShip.fuel) + "L / " +
                            std::to_string(mainShip.fuelCapacity) + "L";
-
     float fuelPercentage = static_cast<float>(mainShip.fuel) /
                            static_cast<float>(mainShip.fuelCapacity);
-
     ImGui::ProgressBar(fuelPercentage, ImVec2(-1, 20), fuelText.c_str());
 
     ImGui::Spacing();
 
-    // -------------------------
-    // Cargo
-    // -------------------------
-
     ImGui::Text("CARGO");
-
     std::string cargoText = std::to_string(mainShip.GetCargoWeight()) +
                             "lbs / " + std::to_string(mainShip.cargoCapacity) +
                             "lbs";
-
     float cargoPercentage = static_cast<float>(mainShip.GetCargoWeight()) /
                             static_cast<float>(mainShip.cargoCapacity);
-
     ImGui::ProgressBar(cargoPercentage, ImVec2(-1, 20), cargoText.c_str());
 
     ImGui::Spacing();
     ImGui::Separator();
 
-    // -------------------------
-    // Other information
-    // -------------------------
-
     ImGui::Text("MONEY");
     ImGui::Text(std::to_string(mainShip.money).c_str());
 
     ImGui::Spacing();
-
     ImGui::Spacing();
 
     if (ImGui::Button("INVENTORY", ImVec2(-1, 35))) {
@@ -729,11 +882,13 @@ class Merchant : public App {
     ImGui::PopStyleColor(6);
   }
 
-  void DrawTerminal() {
+  // =========================================================
+  // TERMINAL WINDOW
+  // =========================================================
 
+  void DrawTerminal() {
     // Terminal colors
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 
     ImGui::Begin("TERMINAL");
@@ -748,18 +903,15 @@ class Merchant : public App {
 
       return; // if theres no power we dont display the terminal
     }
+
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
-
-
 
     if (mainShip.showShipErrorMessage) {
       TerminalErrorMessage();
-    } else if (showInventoryLog) {
-      ShowInventoryTerminal();
     } else {
-        ImGui::Text("================================");
-        ImGui::Text("===       THE WAYFARER       ===");
-        ImGui::Text("================================");
+      ImGui::Text("================================");
+      ImGui::Text("===       THE WAYFARER       ===");
+      ImGui::Text("================================");
     }
 
     ImGui::Spacing();
@@ -776,121 +928,117 @@ class Merchant : public App {
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
 
     ImGui::Text("==== !!! SYSTEM WARNING !!! ====");
-
     ImGui::Text("> %s", mainShip.GetTerminalError().c_str());
-
     ImGui::Text("======== LAUNCH ABORTED ========");
 
     ImGui::PopStyleColor();
   }
 
-  void TerminalCheckStatus() {
-      ImGui::Text("================================");
-      ImGui::Text("       SHIP SYSTEM TERMINAL     ");
-      ImGui::Text("================================");
+  std::string TerminalCheckStatus() {
+    std::string statusText = "";
+    std::string lGearText = "\n> LANDING GEAR .......... ";
+    lGearText += mainShip.landingGear ? "ON" : "OFF";
 
-      ImGui::Spacing();
+    std::string cGearText = "\n> CABIN LIGHTS .......... ";
+    cGearText += mainShip.cabinLights ? "ON" : "OFF";
 
-      std::string lGearText = "> LANDING GEAR .......... ";
-      lGearText += mainShip.landingGear ? "ON" : "OFF";
+    std::string wGearText = "\n> WIPERS ................ ";
+    wGearText += mainShip.wipers ? "ON" : "OFF";
 
-      std::string cGearText = "> CABIN LIGHTS .......... ";
-      cGearText += mainShip.cabinLights ? "ON" : "OFF";
+    statusText += "\n> SYSTEM CHECK COMPLETE";
+    statusText += "\n> NAVIGATIONS ........... OK";
+    statusText += "\n> LIFE SUPPORT .......... OK";
+    statusText += lGearText;
+    statusText += cGearText;
+    statusText += wGearText;
+    statusText += "\n> ALL IS GOOD";
 
-      std::string wGearText = "> WIPERS ................ ";
-      wGearText += mainShip.wipers ? "ON" : "OFF";
+    statusText += "\nNO ACTIVE WARNINGS";
+    statusText += "\nNO SYSTEM FAULTS";
+    statusText += "\nSHIP STATUS: NOMINAL";
 
-      ImGui::Text("> BOOT SEQUENCE COMPLETE");
-      ImGui::Text("> SYSTEM CHECK COMPLETE");
-      ImGui::Text("> NAVIGATIONS ........... OK");
-      ImGui::Text("> LIFE SUPPORT .......... OK");
-      ImGui::Text(lGearText.c_str());
-      ImGui::Text(cGearText.c_str());
-      ImGui::Text(wGearText.c_str());
-
-      ImGui::Text("> ALL IS GOOD");
-
-      ImGui::Spacing();
-
-      ImGui::Text("NO ACTIVE WARNINGS");
-      ImGui::Text("NO SYSTEM FAULTS");
-      ImGui::Text("SHIP STATUS: NOMINAL");
-
-      ImGui::Spacing();
-      ImGui::Spacing();
+    return statusText;
   }
 
   void ShowDefaultTerminal() {
-      ImGui::Text("%s", lastTerminalOutput.c_str());
-      ImGui::Text("--------------------------------");
-      ImGui::Text("> %s", terminalCommand.c_str());
+    ImGui::TextWrapped("%s", lastTerminalOutput.c_str());
+    ImGui::Text("--------------------------------");
+    ImGui::Text("> %s", terminalCommand.c_str());
   }
 
   void UpdateTerminalInput() {
-      if (!mainShip.onShip) return; // only capture when player is at the terminal
+    if (!mainShip.onShip) {
+      return; // only capture when player is at the terminal
+    }
 
-      //65-90 is a-z on keys
+    // 65-90 is a-z on keys
+    const int lowercaseOffset = 32;
+    bool clicked = false;
 
-      const int lowercaseOffset = 32;
-      bool clicked = false;
-
-      // Grab any characters typed this frame
-      for (int curKey = KEY_A; curKey < KEY_Z + 1; curKey++) {
-
-          if (Input::KeyDown(curKey)) { // printable ASCII only
-              terminalCommand += static_cast<char>(curKey);
-              clicked = true;
-          }
-          else if (Input::KeyDown(KEY_SPACE)) {
-              terminalCommand += ' ';
-              clicked = true;
-          }
+    // Grab any characters typed this frame
+    for (int curKey = KEY_A; curKey < KEY_Z + 1; curKey++) {
+      if (Input::KeyDown(curKey)) { // printable ASCII only
+        terminalCommand += static_cast<char>(curKey);
+        clicked = true;
+      } else if (Input::KeyDown(KEY_SPACE)) {
+        terminalCommand += ' ';
+        clicked = true;
       }
+    }
 
-      if (Input::KeyDown(KEY_BACKSPACE) && !terminalCommand.empty()) {
-          terminalCommand.pop_back();
-          clicked = true;
-      }
+    if (Input::KeyDown(KEY_BACKSPACE) && !terminalCommand.empty()) {
+      terminalCommand.pop_back();
+      clicked = true;
+    }
 
-      if (Input::KeyDown(KEY_ENTER)) {
-          if (!terminalCommand.empty()) {
-              RunTerminalCommand(terminalCommand);
-          }
-          terminalCommand.clear();
-          clicked = true;
+    if (Input::KeyDown(KEY_ENTER)) {
+      if (!terminalCommand.empty()) {
+        RunTerminalCommand(terminalCommand);
       }
+      terminalCommand.clear();
+      clicked = true;
+    }
 
-      if (clicked) {
-          Audio::Play(kb_sounds[Math::RandInt(0, 3)]);
-      }
+    if (clicked) {
+      Audio::Play(kb_sounds[Math::RandInt(0, 3)]);
+    }
   }
 
   void RunTerminalCommand(std::string command) {
-      std::string commandOutput = "";
-      if (command == "HELP") {
-          commandOutput += "> HELP\n";
-          commandOutput += " - HELP         : THIS\n";
-          commandOutput += " - VALUE <ITEM> : GENERAL VALUE CHECK\n";
-          commandOutput += " - VALUE TOTAL  : GIVES TOTAL CARGO VALUE\n";
-          commandOutput += " - CARGO        : LISTS ALL HELD CARGO\n";
-          commandOutput += " - LIST <PEOPLE/PLACES> : LISTS KNOWN PEOPLE OR PLACES\n";
-          commandOutput += " - STATUS       : SHOWS STATUS OF SHIP\n";
-          commandOutput += " - DIAG         : DIAGNOSES ERRORS";
-          commandOutput += " - CLEAR        : CLEARS THE TERMINAL";
-      }
-      else if (command == "CARGO") {
-          commandOutput = ShowInventoryTerminal();
-      }
-      else if (command == "CLEAR") {
-          commandOutput = "> SCREEN CLEARED.";
-      }
+    std::string commandOutput = "";
 
-      if (!commandOutput.empty()) {
-          lastTerminalOutput = commandOutput;
-      }
+    if (command == "HELP") {
+      commandOutput += "> HELP\n";
+      commandOutput += " - HELP         : THIS\n";
+      commandOutput += " - VALUE <ITEM> : GENERAL VALUE CHECK\n";
+      commandOutput += " - VALUE TOTAL  : GIVES TOTAL CARGO VALUE\n";
+      commandOutput += " - CARGO        : LISTS ALL HELD CARGO\n";
+      commandOutput +=
+          " - LIST <PEOPLE/PLACES> : LISTS KNOWN PEOPLE OR PLACES\n";
+      commandOutput += " - STATUS       : SHOWS STATUS OF SHIP\n";
+      commandOutput += " - DIAG         : DIAGNOSES ERRORS\n";
+      commandOutput += " - CLEAR        : CLEARS THE TERMINAL";
+    } else if (command == "CARGO") {
+      commandOutput = ShowInventoryTerminal();
+    } else if (command == "CLEAR") {
+      commandOutput = "> SCREEN CLEARED.";
+    } else if (command == "STATUS") {
+      commandOutput = TerminalCheckStatus();
+    }
+
+    if (!commandOutput.empty()) {
+      lastTerminalOutput = commandOutput;
+    }
   }
 
-  void Shutdown() override {}
+  inline int GetMapTile(const std::vector<std::vector<int>> &map, int x,
+                        int y) {
+    if (y < 0 || y >= static_cast<int>(map.size()))
+      return AIR;
+    if (x < 0 || x >= static_cast<int>(map[y].size()))
+      return AIR;
+    return map[y][x];
+  }
 };
 
 std::vector<antibox::App *> CreateGame() { return {new Merchant}; }
