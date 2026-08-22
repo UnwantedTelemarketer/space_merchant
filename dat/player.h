@@ -4,12 +4,7 @@
 
 using namespace antibox;
 
-enum ShipState {
-    Hovering,
-    Landed,
-    In_Transit,
-    In_Space
-};
+enum ShipState { Hovering, Landed, In_Transit, In_Space };
 
 struct PlayerShip {
   float money = 0.f;
@@ -57,8 +52,7 @@ struct PlayerShip {
       {"sam_thrusters_off", "dat/sfxs/sam/sam_thrusters_off.wav"},
       {"sam_incoming_comms", "dat/sfxs/sam/sam_incoming_comms.wav"},
       {"flight_sound", "dat/sfxs/in_flight.wav"},
-      {"end_flight", "dat/sfxs/rumbling_end.wav"}
-  };
+      {"end_flight", "dat/sfxs/rumbling_end.wav"}};
 
   void PowerDown() {
     landingGear = false;
@@ -83,7 +77,7 @@ struct PlayerShip {
 
   void EnterShip() {
     if (thrusters) {
-      //Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
+      // Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
     }
     if (mainPower) {
       Audio::PlayLoop(sound_effects["powered_idle"], "p_idle");
@@ -96,9 +90,9 @@ struct PlayerShip {
     // Get them sound effects going BOO YA!
     if (!thrusters) {
       Audio::Play(sound_effects["thrusters_start"]);
-      //Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
+      // Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
     } else {
-      //Audio::StopLoop("t_idle");
+      // Audio::StopLoop("t_idle");
       Audio::Play(sound_effects["thrusters_shutdown"]);
     }
 
@@ -213,32 +207,26 @@ struct PlayerShip {
   }
 
   void CheckState() {
-      switch (curState) {
-      case ShipState::In_Space:
-          break;
-      case ShipState::In_Transit:
-          if (arrivalTime <= 0.f) {
-              curState = In_Space;
-              Audio::StopLoop("in_flight");
-              Audio::Play(sound_effects["end_flight"]);
-              currentLocation = currentDestination;
-          }
-          break;
-      case ShipState::Hovering:
-          break;
-      case ShipState::Landed:
-          break;
+    switch (curState) {
+    case ShipState::In_Space:
+      break;
+    case ShipState::In_Transit:
+      if (arrivalTime <= 0.f) {
+        curState = In_Space;
+        Audio::StopLoop("in_flight");
+        Audio::Play(sound_effects["end_flight"]);
+        currentLocation = currentDestination;
       }
+      break;
+    case ShipState::Hovering:
+      break;
+    case ShipState::Landed:
+      break;
+    }
   }
-
 
   bool Launch() {
     if (!mainPower) {
-      return false;
-    }
-
-    if (currentLocation == currentDestination) {
-      TerminalThrowError("ALREADY AT DESTINATION");
       return false;
     }
 
@@ -255,6 +243,11 @@ struct PlayerShip {
       return false;
     }
 
+    if (currentLocation == currentDestination) {
+      TerminalThrowError("ALREADY AT DESTINATION");
+      return false;
+    }
+
     fuel -= fuelCost;
 
     currentLocation = 0;
@@ -267,32 +260,31 @@ struct PlayerShip {
   }
 
   void TerminalThrowError(std::string message) {
-      //Set the error message
-      shipErrorMessage = message;
-      showShipErrorMessage = true;
-      errorMessageLength = 0;
+    // Set the error message
+    shipErrorMessage = message;
+    showShipErrorMessage = true;
+    errorMessageLength = 0;
 
-      //Lerp the error showing and the letters shown
-      Utilities::SetVarInSeconds("terminal_error", &showShipErrorMessage, 6.f);
-      Utilities::Lerp("terminal_message_length", &errorMessageLength, shipErrorMessage.size() - 1, 1.f);
+    // Lerp the error showing and the letters shown
+    Utilities::SetVarInSeconds("terminal_error", &showShipErrorMessage, 6.f);
+    Utilities::Lerp("terminal_message_length", &errorMessageLength,
+                    shipErrorMessage.size() - 1, 1.f);
 
-      //play the audio
-      Audio::Play(sound_effects["terminal_error"]);
-      Audio::PlayLoop(sound_effects["terminal_type"], "terminal_typing");
-
+    // play the audio
+    Audio::Play(sound_effects["terminal_error"]);
+    Audio::PlayLoop(sound_effects["terminal_type"], "terminal_typing");
   }
 
   std::string GetTerminalError() {
-      int errorMessageEndNum = std::floor(errorMessageLength);
+    int errorMessageEndNum = std::floor(errorMessageLength);
 
-      if (errorMessageLength >= shipErrorMessage.size() - 1) {
-          Audio::StopLoop("terminal_typing");
-          return shipErrorMessage;
-      }
+    if (errorMessageLength >= shipErrorMessage.size() - 1) {
+      Audio::StopLoop("terminal_typing");
+      return shipErrorMessage;
+    }
 
-      return shipErrorMessage.substr(0, errorMessageEndNum);
+    return shipErrorMessage.substr(0, errorMessageEndNum);
   }
-
 
   void ArriveAtDestination() { currentLocation = currentDestination; }
 };
