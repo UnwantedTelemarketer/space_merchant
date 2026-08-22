@@ -27,7 +27,8 @@ class Merchant : public App {
   bool showInventoryLog = false;
 
   std::map<std::string, std::string> sound_effects = {
-      {"switch", "dat/sfxs/switch.wav"}};
+      {"switch", "dat/sfxs/switch.wav"},
+  };
   std::vector<std::string> kb_sounds = {
       "dat/sfxs/kb/keyboard_1.wav",
       "dat/sfxs/kb/keyboard_2.wav",
@@ -47,7 +48,7 @@ class Merchant : public App {
   SellableItem item_water = {1, "Water", 5.f, 2.f};
 
   std::string terminalCommand = "";
-  std::vector<std::string> terminalOutputLog;
+  std::string lastTerminalOutput = "> TERMINAL BOOTED\n> TYPE HELP FOR COMMANDS";
 
   //----Ship Colors----
   ImVec4 windowBG = ImVec4(0.06f, 0.06f, 0.06f, 1.0f);
@@ -116,6 +117,7 @@ class Merchant : public App {
 
   void Update() override {
 
+      mainShip.CheckState();
     UpdateTerminalInput();
     if (Input::KeyDown(KEY_GRAVE_ACCENT)) {
       Utilities::ToggleConsoleVisible();
@@ -195,28 +197,31 @@ class Merchant : public App {
     return total;
   }
 
-  void ShowInventoryTerminal() {
-    ImGui::Text("> CARGO MANIFEST");
-    ImGui::Spacing();
-
-    ImGui::Text("> --------------------");
+  std::string ShowInventoryTerminal() {
+    std::string cargoManifest = "";
+    cargoManifest += "> CARGO MANIFEST";
+    cargoManifest += "\n> --------------------";
 
     if (mainShip.cargo.empty()) {
-      ImGui::Text("> CARGO HOLD EMPTY");
+      cargoManifest += "\n> CARGO HOLD EMPTY";
     } else {
       for (const auto &item : mainShip.cargo) {
-        ImGui::Text("> %-16s x%d", item.item.name.c_str(), item.quantity);
+        cargoManifest += "\n> ";
+        cargoManifest += item.item.name.c_str();
+        cargoManifest += " x";
+        cargoManifest += std::to_string(item.quantity);
       }
     }
 
-    ImGui::Spacing();
+    cargoManifest += "\n> --------------------";
 
-    ImGui::Text("> --------------------");
+    cargoManifest += "\n> CARGO: ";
+    cargoManifest += std::to_string(mainShip.GetCargoWeight());
+    cargoManifest += " / ";
+    cargoManifest += std::to_string(mainShip.cargoCapacity);
+    cargoManifest += "lbs.";
 
-    ImGui::Text("> CARGO: %d / %.0f LBS", mainShip.GetCargoWeight(),
-                mainShip.cargoCapacity);
-
-    ImGui::Spacing();
+    return cargoManifest;
   }
 
   void ShowGasNMartMarket() {
@@ -528,9 +533,7 @@ class Merchant : public App {
     ImGui::Spacing();
 
     if (ImGui::Button("LAUNCH", ImVec2(-1, 40))) {
-      if (mainShip.Launch()) {
-        mainShip.ArriveAtDestination();
-      }
+        mainShip.Launch();
     }
     if (mainShip.currentLocation == 1) {
       if (ImGui::Button("EXIT SHIP")) {
@@ -681,7 +684,7 @@ class Merchant : public App {
     if (!mainShip.mainPower) {
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
       ImGui::Text("================================");
-      ImGui::Text("         MAIN POWER OFF         ");
+      ImGui::Text("===      MAIN POWER OFF      ===");
       ImGui::Text("================================");
       ImGui::PopStyleColor(3);
       ImGui::End();
@@ -698,9 +701,7 @@ class Merchant : public App {
       ShowInventoryTerminal();
     } else {
         ImGui::Text("================================");
-        ImGui::Spacing();
-        ImGui::Text("===                          ===");
-        ImGui::Spacing();
+        ImGui::Text("===       THE WAYFARER       ===");
         ImGui::Text("================================");
     }
 
@@ -719,11 +720,7 @@ class Merchant : public App {
 
     ImGui::Text("==== !!! SYSTEM WARNING !!! ====");
 
-    ImGui::Spacing();
-
     ImGui::Text("> %s", mainShip.GetTerminalError().c_str());
-
-    ImGui::Spacing();
 
     ImGui::Text("======== LAUNCH ABORTED ========");
 
@@ -767,10 +764,8 @@ class Merchant : public App {
   }
 
   void ShowDefaultTerminal() {
-      for (const std::string& line : terminalOutputLog) {
-          ImGui::Text("%s", line.c_str());
-      }
-
+      ImGui::Text("%s", lastTerminalOutput.c_str());
+      ImGui::Text("--------------------------------");
       ImGui::Text("> %s", terminalCommand.c_str());
   }
 
@@ -802,7 +797,6 @@ class Merchant : public App {
 
       if (Input::KeyDown(KEY_ENTER)) {
           if (!terminalCommand.empty()) {
-              terminalOutputLog.push_back(terminalCommand);
               RunTerminalCommand(terminalCommand);
           }
           terminalCommand.clear();
@@ -817,15 +811,25 @@ class Merchant : public App {
   void RunTerminalCommand(std::string command) {
       std::string commandOutput = "";
       if (command == "HELP") {
+          commandOutput += "> HELP\n";
           commandOutput += " - HELP         : THIS\n";
           commandOutput += " - VALUE <ITEM> : GENERAL VALUE CHECK\n";
           commandOutput += " - VALUE TOTAL  : GIVES TOTAL CARGO VALUE\n";
-          commandOutput += " - LIST CARGO   : LISTS ALL HELD CARGO\n";
-          commandOutput += " - LIST <PEOPLE/PLACES> : LISTS KNOWN PEOPLE OR PLACES";
+          commandOutput += " - CARGO        : LISTS ALL HELD CARGO\n";
+          commandOutput += " - LIST <PEOPLE/PLACES> : LISTS KNOWN PEOPLE OR PLACES\n";
+          commandOutput += " - STATUS       : SHOWS STATUS OF SHIP\n";
+          commandOutput += " - DIAG         : DIAGNOSES ERRORS";
+          commandOutput += " - CLEAR        : CLEARS THE TERMINAL";
+      }
+      else if (command == "CARGO") {
+          commandOutput = ShowInventoryTerminal();
+      }
+      else if (command == "CLEAR") {
+          commandOutput = "> SCREEN CLEARED.";
       }
 
       if (!commandOutput.empty()) {
-          terminalOutputLog.push_back(commandOutput);
+          lastTerminalOutput = commandOutput;
       }
   }
 

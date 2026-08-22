@@ -4,6 +4,13 @@
 
 using namespace antibox;
 
+enum ShipState {
+    Hovering,
+    Landed,
+    In_Transit,
+    In_Space
+};
+
 struct PlayerShip {
   float money = 0.f;
   float debt = 0.f;
@@ -19,6 +26,9 @@ struct PlayerShip {
   int currentLocation = 0;
   int currentDestination = 1;
   float errorMessageLength = 0;
+  float arrivalTime = 0.f;
+
+  ShipState curState = ShipState::In_Space;
 
   bool onShip = true;
   bool mainPower = false;
@@ -41,7 +51,13 @@ struct PlayerShip {
       {"power_up", "dat/sfxs/startup_ship.wav"},
       {"power_down", "dat/sfxs/power_down.wav"},
       {"terminal_error", "dat/sfxs/error.mp3"},
-      {"terminal_type", "dat/sfxs/terminal_type.mp3"}
+      {"terminal_type", "dat/sfxs/terminal_type.mp3"},
+      {"sam_power_on", "dat/sfxs/sam/sam_power_on.wav"},
+      {"sam_thrusters_on", "dat/sfxs/sam/sam_thrusters_on.wav"},
+      {"sam_thrusters_off", "dat/sfxs/sam/sam_thrusters_off.wav"},
+      {"sam_incoming_comms", "dat/sfxs/sam/sam_incoming_comms.wav"},
+      {"flight_sound", "dat/sfxs/in_flight.wav"},
+      {"end_flight", "dat/sfxs/rumbling_end.wav"}
   };
 
   void PowerDown() {
@@ -67,7 +83,7 @@ struct PlayerShip {
 
   void EnterShip() {
     if (thrusters) {
-      Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
+      //Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
     }
     if (mainPower) {
       Audio::PlayLoop(sound_effects["powered_idle"], "p_idle");
@@ -80,9 +96,9 @@ struct PlayerShip {
     // Get them sound effects going BOO YA!
     if (!thrusters) {
       Audio::Play(sound_effects["thrusters_start"]);
-      Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
+      //Audio::PlayLoop(sound_effects["thrusters_idle"], "t_idle");
     } else {
-      Audio::StopLoop("t_idle");
+      //Audio::StopLoop("t_idle");
       Audio::Play(sound_effects["thrusters_shutdown"]);
     }
 
@@ -196,6 +212,26 @@ struct PlayerShip {
     return true;
   }
 
+  void CheckState() {
+      switch (curState) {
+      case ShipState::In_Space:
+          break;
+      case ShipState::In_Transit:
+          if (arrivalTime <= 0.f) {
+              curState = In_Space;
+              Audio::StopLoop("in_flight");
+              Audio::Play(sound_effects["end_flight"]);
+              currentLocation = currentDestination;
+          }
+          break;
+      case ShipState::Hovering:
+          break;
+      case ShipState::Landed:
+          break;
+      }
+  }
+
+
   bool Launch() {
     if (!mainPower) {
       return false;
@@ -222,6 +258,10 @@ struct PlayerShip {
     fuel -= fuelCost;
 
     currentLocation = 0;
+    arrivalTime = 10.f;
+    curState = ShipState::In_Transit;
+    Audio::PlayLoop(sound_effects["thrusters_idle"], "in_flight");
+    Utilities::Lerp("flight_time", &arrivalTime, 0.f, 10.f);
 
     return true;
   }
